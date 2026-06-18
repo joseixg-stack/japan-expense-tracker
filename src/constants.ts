@@ -35,3 +35,6 @@ export const CATEGORY_COLORS: Record<Category, string> = {
 
 /** localStorage 中存储支出列表所用的 key */
 export const STORAGE_KEY = 'japan-expense-tracker:expenses'
+
+/** localStorage 中存储每月预算所用的 key（单独存储，与支出列表解耦） */
+export const BUDGET_STORAGE_KEY = 'japan-expense-tracker:budget'

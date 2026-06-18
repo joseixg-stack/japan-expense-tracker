@@ -22,6 +22,13 @@ export function toDateString(date: Date): string {
   return `${y}-${m}-${d}`
 }
 
+/** 获取当前月份前缀 YYYY-MM（用于匹配 date 字段） */
+function getMonthPrefix(date: Date): string {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  return `${y}-${m}-`
+}
+
 /** 把金额格式化为日元显示，例如 ¥1,234 */
 const yenFormatter = new Intl.NumberFormat('ja-JP', {
   style: 'currency',
@@ -44,8 +51,7 @@ export function getTodayTotal(expenses: Expense[]): number {
 
 /** 本月总支出 */
 export function getMonthTotal(expenses: Expense[]): number {
-  const now = new Date()
-  const prefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-`
+  const prefix = getMonthPrefix(new Date())
   return expenses
     .filter((e) => e.date.startsWith(prefix))
     .reduce((sum, e) => sum + e.amount, 0)
@@ -79,6 +85,8 @@ export function sumByCategory(expenses: Expense[]): CategoryStat[] {
 export function sortByDateDesc(expenses: Expense[]): Expense[] {
   return [...expenses].sort((a, b) => {
     if (a.date !== b.date) return a.date < b.date ? 1 : -1
-    return a.id < b.id ? 1 : -1
+    // 用 createdAt 时间戳排序，同日记录按添加顺序排列
+    if (a.createdAt !== b.createdAt) return a.createdAt < b.createdAt ? 1 : -1
+    return 0
   })
 }

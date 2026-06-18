@@ -19,7 +19,9 @@ export interface Expense {
   category: Category
   /** 备注，可为空 */
   note: string
+  /** 创建时的毫秒级时间戳，用于同日记录排序 */
+  createdAt: number
 }
 
-/** 新增记录时表单提交的载荷（不含 id） */
-export type NewExpense = Omit<Expense, 'id'>
+/** 新增记录时表单提交的载荷（不含 id 和 createdAt） */
+export type NewExpense = Omit<Expense, 'id' | 'createdAt'>

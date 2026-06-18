@@ -1,15 +1,19 @@
 import { useMemo, useState } from 'react'
 import type { Category } from './types'
 import { useExpenses } from './hooks/useExpenses'
-import { sortByDateDesc } from './utils'
+import { useBudget } from './hooks/useBudget'
+import { getMonthTotal, getTodayTotal, sortByDateDesc } from './utils'
 import { ExpenseForm } from './components/ExpenseForm'
 import { SummaryCards } from './components/SummaryCards'
+import { BudgetPanel } from './components/BudgetPanel'
 import { CategoryFilter } from './components/CategoryFilter'
 import { CategoryStats } from './components/CategoryStats'
 import { ExpenseList } from './components/ExpenseList'
 
 export default function App() {
-  const { expenses, addExpense, removeExpense } = useExpenses()
+  const { expenses, addExpense, removeExpense, saveError: expenseSaveError } =
+    useExpenses()
+  const { budget, updateBudget, saveError: budgetSaveError } = useBudget()
   const [filter, setFilter] = useState<Category | 'all'>('all')
 
   // 分类统计始终基于全部数据，不受筛选影响
@@ -21,6 +25,12 @@ export default function App() {
     return sortByDateDesc(filtered)
   }, [expenses, filter])
 
+  // 统一计算口径：今日/本月支出只算一次，各组件共享
+  const todaySpent = useMemo(() => getTodayTotal(expenses), [expenses])
+  const monthSpent = useMemo(() => getMonthTotal(expenses), [expenses])
+
+  const saveError = expenseSaveError || budgetSaveError
+
   return (
     <div className="app">
       <header className="app-header">
@@ -28,11 +38,19 @@ export default function App() {
         <p className="subtitle">简单记录每一笔日元支出</p>
       </header>
 
+      {saveError && <div className="global-warn">{saveError}</div>}
+
       <main className="app-main">
         <div className="top-grid">
-          <SummaryCards expenses={expenses} />
+          <SummaryCards todayTotal={todaySpent} monthTotal={monthSpent} />
           <ExpenseForm onAdd={addExpense} />
         </div>
+
+        <BudgetPanel
+          budget={budget}
+          monthSpent={monthSpent}
+          onUpdate={updateBudget}
+        />
 
         <CategoryStats expenses={expenses} />
 

@@ -12,6 +12,16 @@ interface FormErrors {
   amount?: string
 }
 
+/** 校验金额，返回错误信息（合法时返回空字符串） */
+function validateAmount(raw: string): string {
+  const trimmed = raw.trim()
+  if (trimmed === '') return '请输入金额'
+  const n = Number(trimmed)
+  if (!Number.isFinite(n)) return '请输入有效的数字'
+  if (n <= 0) return '金额必须大于 0'
+  return ''
+}
+
 export function ExpenseForm({ onAdd }: Props) {
   const [date, setDate] = useState<string>(todayStr())
   const [amount, setAmount] = useState<string>('')
@@ -19,23 +29,15 @@ export function ExpenseForm({ onAdd }: Props) {
   const [note, setNote] = useState<string>('')
   const [errors, setErrors] = useState<FormErrors>({})
 
-  function validate(): FormErrors {
-    const next: FormErrors = {}
-    if (!date) next.date = '请选择日期'
-    const n = Number(amount)
-    if (amount.trim() === '' || !Number.isFinite(n)) {
-      next.amount = '请输入大于 0 的金额'
-    } else if (n <= 0) {
-      next.amount = '金额必须大于 0'
-    }
-    return next
-  }
-
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    const next = validate()
+    // 提交时统一校验：日期非空 + 金额合法
+    const next: FormErrors = {
+      date: date ? undefined : '请选择日期',
+      amount: validateAmount(amount) || undefined,
+    }
     setErrors(next)
-    if (Object.keys(next).length > 0) return
+    if (next.date || next.amount) return
 
     onAdd({
       date,
@@ -50,6 +52,24 @@ export function ExpenseForm({ onAdd }: Props) {
     setErrors({})
   }
 
+  // 输入时清除该字段的错误，让提示随修正即时消失
+  function handleDateChange(value: string) {
+    setDate(value)
+    if (errors.date) setErrors((prev) => ({ ...prev, date: undefined }))
+  }
+
+  function handleAmountChange(value: string) {
+    setAmount(value)
+    if (errors.amount) setErrors((prev) => ({ ...prev, amount: undefined }))
+  }
+
+  // 离开金额框时校验：已有值但非法则即时提示（空着不打扰，留到提交时校验）
+  function handleAmountBlur() {
+    if (amount.trim() === '') return
+    const err = validateAmount(amount)
+    setErrors((prev) => ({ ...prev, amount: err || undefined }))
+  }
+
   return (
     <form className="card form" onSubmit={handleSubmit} noValidate>
       <h2 className="card-title">添加支出</h2>
@@ -60,7 +80,7 @@ export function ExpenseForm({ onAdd }: Props) {
           <input
             type="date"
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={(e) => handleDateChange(e.target.value)}
           />
           {errors.date && <span className="form-error">{errors.date}</span>}
         </label>
@@ -74,7 +94,8 @@ export function ExpenseForm({ onAdd }: Props) {
             inputMode="numeric"
             placeholder="例如 1000"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={(e) => handleAmountChange(e.target.value)}
+            onBlur={handleAmountBlur}
           />
           {errors.amount && (
             <span className="form-error">{errors.amount}</span>
