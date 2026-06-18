@@ -1,0 +1,11 @@
+node_modules
+dist
+dist-ssr
+*.local
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+*.log
+
+# TypeScript 构建增量缓存
+*.tsbuildinfo
